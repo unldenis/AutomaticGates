@@ -1,0 +1,28 @@
+## If enabled, the autosave will automatically save the gate in the config when it is enabled/disabled.
+auto-save: false
+
+## These are any configurable sounds.
+## The list of sounds can be found here -> https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html
+sounds:
+
+  ## This sound will be triggered when the door opens
+  open:
+    ## Sound enabled or disabled for this gate
+    enabled: true
+    ## This is the name of the sound
+    name: 'UI_TOAST_CHALLENGE_COMPLETE'
+    ## The volume of the sound (default is 1.0)
+    volume: 1.0
+    ## The pitch of the sound (default is 1.0)
+    pitch: 1.0
+
+  ## This sound will be triggered when the door closes
+  close:
+    ## Sound enabled or disabled for this gate
+    enabled: true
+    ## This is the name of the sound
+    name: 'BLOCK_NOTE_BLOCK_PLING'
+    ## The volume of the sound (default is 1.0)
+    volume: 1.0
+    ## The pitch of the sound (default is 1.0)
+    pitch: 1.0
