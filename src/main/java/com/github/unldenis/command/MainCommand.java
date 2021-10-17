@@ -90,19 +90,25 @@ public final class MainCommand implements CommandExecutor {
                             public void onFieldClick(Field field, Object value, ClickType clickType) {
 
                                 if (value.getClass().equals(Boolean.class)) {
-                                    door.setEnabled(!door.getEnabled());
-                                    if (door.getEnabled()) {
-                                        door.loadItemFrames();
-                                        for (ItemFrame itemFrame : door.getItemFrames())
-                                            itemFrame.setItem(null);
-                                    }
-                                    player.sendMessage(field.getName() + " set to " + ChatColor.GREEN + door.getEnabled());
+                                    if(field.getName().equals("enabled")) {
+                                        door.setEnabled(!door.getEnabled());
+                                        if (door.getEnabled()) {
+                                            door.loadItemFrames();
+                                            for (ItemFrame itemFrame : door.getItemFrames())
+                                                itemFrame.setItem(null);
+                                        }
+                                        player.sendMessage(field.getName() + " set to " + ChatColor.GREEN + door.getEnabled());
 
-                                    if (plugin.getConfigYml().getConfig().getBoolean("auto-save")) {
-                                        door.save();
-                                        player.sendMessage(ChatColor.GREEN + "Saved");
+                                        if (plugin.getConfigYml().getConfig().getBoolean("auto-save")) {
+                                            door.save();
+                                            player.sendMessage(ChatColor.GREEN + "Saved");
+                                        }
+                                    }else{
+                                        door.setPreventCollision(!door.getPreventCollision());
+                                        player.sendMessage(field.getName() + " set to " + ChatColor.GREEN + door.getEnabled());
                                     }
                                     player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
+
                                 } else if (value.getClass().equals(Location.class)) {
                                     Vector dirToDestination = player.getEyeLocation().getDirection().normalize();
                                     RayTraceResult rts = player.getWorld().rayTraceBlocks(player.getEyeLocation(), dirToDestination, 5);

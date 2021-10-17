@@ -4,15 +4,12 @@ import com.github.unldenis.Gate;
 import com.github.unldenis.obj.Door;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
+import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -29,7 +26,7 @@ public final class DoorListener implements Listener {
         if (!(event.getRightClicked() instanceof ItemFrame)) return;
         ItemFrame itemFrame = (ItemFrame) event.getRightClicked();
 
-        Optional<Door> doorOptional = plugin.getDoorsManager().find(itemFrame.getLocation());
+        Optional<Door> doorOptional = plugin.getDoorsManager().find(itemFrame.getEntityId());
         if (!doorOptional.isPresent()) return;
         Door door = doorOptional.get();
 
@@ -54,7 +51,7 @@ public final class DoorListener implements Listener {
     public void preventBreaking(HangingBreakByEntityEvent event) {
         if (!(event.getEntity() instanceof ItemFrame) ) return;
         ItemFrame itemFrame = (ItemFrame) event.getEntity();
-        Optional<Door> doorOptional = plugin.getDoorsManager().find(itemFrame.getLocation());
+        Optional<Door> doorOptional = plugin.getDoorsManager().find(itemFrame.getEntityId());
         if (doorOptional.isPresent()) {
             event.setCancelled(true);
             if(event.getRemover() instanceof Player)  {
@@ -67,4 +64,15 @@ public final class DoorListener implements Listener {
 
     }
 
+    @EventHandler()
+    public void onHangingBreak(HangingBreakEvent event) {
+        if(event.getEntity() instanceof ItemFrame && event.getCause().equals(HangingBreakEvent.RemoveCause.OBSTRUCTION)) {
+            ItemFrame itemFrame = (ItemFrame) event.getEntity();
+            Optional<Door> doorOptional = plugin.getDoorsManager().findMoving(itemFrame.getEntityId());
+            if (doorOptional.isPresent() && doorOptional.get().getPreventCollision()) {
+                event.setCancelled(true);
+            }
+        }
+
+    }
 }

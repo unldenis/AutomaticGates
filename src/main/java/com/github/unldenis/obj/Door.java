@@ -31,6 +31,7 @@ public @Getter class Door {
     private Pin pin_3 = new Pin();
     private Pin pin_4 = new Pin();
     @Setter private Integer closeSeconds = 30;
+    @Setter private Boolean preventCollision = true;
     @Setter private Boolean enabled = false;
     private List<ItemFrame> itemFrames = new ArrayList<>();
 
@@ -190,6 +191,7 @@ public @Getter class Door {
         String prefix  = "doors." + name + ".";
 
         plugin.getDoors().getConfig().set(prefix+"enabled", enabled.booleanValue());
+        plugin.getDoors().getConfig().set(prefix+"preventCollision", preventCollision.booleanValue());
 
         plugin.getDoors().getConfig().set(prefix+"closeSeconds", closeSeconds);
 

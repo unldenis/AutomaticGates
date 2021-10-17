@@ -35,10 +35,11 @@ public final class Doors {
     }
 
     /**
-     * Method used to search for a gate
+     * Deprecated method used to search for a gate
      * @param location location of a gate pin
      * @return an optional of the Door class if found, otherwise an empty optional
      */
+    @Deprecated
     public @NonNull Optional<Door> find(@NonNull Location location) {
         for(Door door: doors) {
             if(door.getEnabled() && (door.getPin_1().getLocation().equals(location) ||
@@ -50,6 +51,40 @@ public final class Doors {
         }
         return Optional.empty();
     }
+    /**
+     * Method used to search for a gate
+     * @param id id of a gate pin
+     * @return an optional of the Door class if found, otherwise an empty optional
+     */
+    public @NonNull Optional<Door> find(@NonNull int id) {
+        for(Door door: doors) {
+            if(door.getEnabled() && (door.getItemFrames().get(0).getEntityId()==id ||
+                    door.getItemFrames().get(1).getEntityId()==id ||
+                    door.getItemFrames().get(2).getEntityId()==id ||
+                    door.getItemFrames().get(3).getEntityId()==id)) {
+                return Optional.ofNullable(door);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Method used to search for a moving gate
+     * @param id id of the entity
+     * @return an optional of the Door class if found, otherwise an empty optional
+     */
+    public @NonNull Optional<Door> findMoving(@NonNull int id) {
+        for(Door door: doors) {
+            if(!door.getEnabled() && (door.getItemFrames().get(0).getEntityId()==id ||
+                    door.getItemFrames().get(1).getEntityId()==id ||
+                    door.getItemFrames().get(2).getEntityId()==id ||
+                    door.getItemFrames().get(3).getEntityId()==id)) {
+                return Optional.ofNullable(door);
+            }
+        }
+        return Optional.empty();
+    }
+
 
     /**
      * Method that loads all gates from config
@@ -62,6 +97,7 @@ public final class Doors {
                 String prefix = "doors." +s + ".";
 
                 door.setEnabled(config.getBoolean(prefix+"enabled"));
+                door.setPreventCollision(config.getBoolean(prefix+"preventCollision"));
 
                 door.setCloseSeconds(config.getInt(prefix+"closeSeconds"));
 
