@@ -101,6 +101,7 @@ public final class Doors {
 
                 door.setCloseSeconds(config.getInt(prefix+"closeSeconds"));
 
+                door.setHigh(config.getInt(prefix+"high"));
 
                 door.setBorder_1((Location) config.get(prefix+"border_1"));
                 door.setBorder_2((Location) config.get(prefix+"border_2"));

@@ -1,29 +1,20 @@
 package com.github.unldenis.command;
 
 import com.github.unldenis.Gate;
+import com.github.unldenis.inventory.*;
 import com.github.unldenis.obj.Door;
-import com.github.unldenis.obj.Pin;
-import com.github.unldenis.objectviewer.ObjectViewer;
-import com.github.unldenis.objectviewer.OnFieldClickListener;
-import com.github.unldenis.util.ReflectionUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.ClickType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.RayTraceResult;
-import org.bukkit.util.Vector;
 
-import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.Set;
 
@@ -85,67 +76,8 @@ public final class MainCommand implements CommandExecutor {
                             return true;
                         }
                         Door door = doorOptional.get();
-                        new ObjectViewer<Door>(door).open(name + " setup", player, new OnFieldClickListener() {
-                            @Override
-                            public void onFieldClick(Field field, Object value, ClickType clickType) {
-
-                                if (value.getClass().equals(Boolean.class)) {
-                                    if(field.getName().equals("enabled")) {
-                                        door.setEnabled(!door.getEnabled());
-                                        if (door.getEnabled()) {
-                                            door.loadItemFrames();
-                                            for (ItemFrame itemFrame : door.getItemFrames())
-                                                itemFrame.setItem(null);
-                                        }
-                                        player.sendMessage(field.getName() + " set to " + ChatColor.GREEN + door.getEnabled());
-
-                                        if (plugin.getConfigYml().getConfig().getBoolean("auto-save")) {
-                                            door.save();
-                                            player.sendMessage(ChatColor.GREEN + "Saved");
-                                        }
-                                    }else{
-                                        door.setPreventCollision(!door.getPreventCollision());
-                                        player.sendMessage(field.getName() + " set to " + ChatColor.GREEN + door.getEnabled());
-                                    }
-                                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
-
-                                } else if (value.getClass().equals(Location.class)) {
-                                    Vector dirToDestination = player.getEyeLocation().getDirection().normalize();
-                                    RayTraceResult rts = player.getWorld().rayTraceBlocks(player.getEyeLocation(), dirToDestination, 5);
-                                    if (rts != null) {
-                                        if (rts.getHitBlock() != null) {
-                                            Location rtsLoc = rts.getHitBlock().getLocation();
-
-                                            ReflectionUtils.setField(field, door, rtsLoc);
-                                            player.sendMessage(field.getName() + " set to " + ChatColor.GREEN + rtsLoc.toVector());
-                                            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
-                                        }
-                                    }
-                                } else if (value.getClass().equals(Integer.class)) {
-                                    int a = door.getCloseSeconds();
-                                    a += clickType.isLeftClick() ? 1 : -1;
-                                    door.setCloseSeconds(a);
-                                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
-                                } else {
-                                    Vector dirToDestination = player.getEyeLocation().getDirection().normalize();
-                                    RayTraceResult rts = player.getWorld().rayTraceEntities(player.getEyeLocation(), dirToDestination, 5, entity -> entity instanceof ItemFrame);
-                                    if (rts != null) {
-                                        if (rts.getHitEntity() != null) {
-                                            ItemFrame itemFrame = (ItemFrame) rts.getHitEntity();
-
-                                            Pin pin = (Pin) value;
-                                            pin.setLocation(itemFrame.getLocation());
-                                            pin.setPassword(itemFrame.getItem());
-
-                                            player.sendMessage(field.getName() + " set to " + ChatColor.GREEN + itemFrame.getLocation().toVector());
-                                            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
-
-                                        }
-                                    }
-                                }
-
-                            }
-                        });
+                        DoorMenu doorMenu = new DoorMenu(player, door);
+                        doorMenu.open();
                         return true;
                     }
                 } else if (args[0].equalsIgnoreCase("save")) {

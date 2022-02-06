@@ -2,11 +2,13 @@ package com.github.unldenis;
 
 import com.github.unldenis.command.MainCommand;
 import com.github.unldenis.data.DataManager;
+import com.github.unldenis.inventory.*;
 import com.github.unldenis.listener.DoorListener;
 import com.github.unldenis.manager.Doors;
 import com.github.unldenis.obj.CSound;
-import com.github.unldenis.objectviewer.ObjectClickListener;
+import com.github.unldenis.task.*;
 import lombok.Getter;
+import org.bukkit.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
 @Getter
@@ -19,6 +21,7 @@ public class Gate extends JavaPlugin {
     private CSound openGate;
     private CSound closeGate;
 
+    private WorkloadThread workloadThread;
 
     @Override
     public void onEnable() {
@@ -27,7 +30,7 @@ public class Gate extends JavaPlugin {
         configYml = new DataManager(this, "config.yml");
 
         getCommand("gate").setExecutor(new MainCommand(this));
-        getServer().getPluginManager().registerEvents(new ObjectClickListener(), this);
+        getServer().getPluginManager().registerEvents(new MenuListener(), this);
         getServer().getPluginManager().registerEvents(new DoorListener(this), this);
 
         doorsManager = new Doors(this);
@@ -40,6 +43,10 @@ public class Gate extends JavaPlugin {
         closeGate = new CSound(configYml.getConfig().getString("sounds.close.name"),
                 (double) configYml.getConfig().get("sounds.close.volume"),(double) configYml.getConfig().get("sounds.close.pitch"),
                 configYml.getConfig().getBoolean("sounds.close.enabled"));
+
+
+        workloadThread = new WorkloadThread(configYml.getConfig().getInt("MaxMillisPerTick"));
+        Bukkit.getScheduler().runTaskTimer(this, workloadThread, 1L, 1L);
 
     }
 

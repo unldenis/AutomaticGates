@@ -26,3 +26,8 @@ sounds:
     volume: 1.0
     ## The pitch of the sound (default is 1.0)
     pitch: 1.0
+
+
+# Maximum millis that the thread teleporting the blocks should take per tick.
+# Should be below 25.
+MaxMillisPerTick: 12

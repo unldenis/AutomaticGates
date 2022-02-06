@@ -1,6 +1,7 @@
 package com.github.unldenis.obj;
 
 import com.github.unldenis.Gate;
+import com.github.unldenis.task.*;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -31,6 +32,7 @@ public @Getter class Door {
     private Pin pin_3 = new Pin();
     private Pin pin_4 = new Pin();
     @Setter private Integer closeSeconds = 30;
+    @Setter private Integer high = 4;
     @Setter private Boolean preventCollision = true;
     @Setter private Boolean enabled = false;
     private List<ItemFrame> itemFrames = new ArrayList<>();
@@ -82,15 +84,16 @@ public @Getter class Door {
     public void goUp() {
         new BukkitRunnable() {
             int k = 0;
+            WorkloadThread workloadThread = plugin.getWorkloadThread();
             @Override
             public void run() {
-                if(k==3)  {
+                if(k==high-1)  {
                     cancel();
                     goDown();
                     return;
                 }
 
-                for(int j=0; j<4; j++) {
+                for(int j=0; j<high; j++) {
                     Location loc1 = border_1.clone().add(0, -j+k, 0);
                     Location loc2 = border_2.clone().add(0, -j+k, 0);
 
@@ -103,18 +106,18 @@ public @Getter class Door {
                     for(int x = bottomBlockX; x <= topBlockX; x++) {
                         for(int z = bottomBlockZ; z <= topBlockZ; z++) {
                             Block block = loc1.getWorld().getBlockAt(x, loc1.getBlockY(), z);
-                            loc1.getWorld().getBlockAt(block.getLocation().add(0, 1, 0)).setType(block.getType());
-                            block.setType(Material.AIR);
+                            this.workloadThread.addLoad(new PlaceableBlock(loc1.getWorld().getBlockAt(block.getLocation().add(0, 1, 0)), block.getType()));
+                            this.workloadThread.addLoad(new PlaceableBlock(block, Material.AIR));
                         }
                     }
                 }
                 for(ItemFrame itemFrame: itemFrames)
-                    itemFrame.teleport(itemFrame.getLocation().add(0, 1, 0));
+                    this.workloadThread.addLoad(new ItemFrameTeleportable(itemFrame, itemFrame.getLocation().add(0, 1, 0)));
                 k++;
             }
         }
 
-        .runTaskTimer(plugin, 0L, 30L);
+        .runTaskTimerAsynchronously(plugin, 0L, 30L);
 
 
     }
@@ -122,18 +125,19 @@ public @Getter class Door {
     private void goDown() {
         new BukkitRunnable() {
             int k = 0;
+            WorkloadThread workloadThread = plugin.getWorkloadThread();
             @Override
             public void run() {
-                if(k==3) {
+                if(k==high-1) {
                     cancel();
                     enabled = true;
                     return;
                 }
                 if(k==0 && plugin.getCloseGate().isEnabled())
                     plugin.getCloseGate().playSound(pin_1.getLocation().toVector().getMidpoint(pin_4.getLocation().toVector()).toLocation(pin_1.getLocation().getWorld()));
-                for(int j=3; j>=0; j--) {
-                    Location loc1 = border_1.clone().add(0, -j-k+3, 0);
-                    Location loc2 = border_2.clone().add(0, -j-k+3, 0);
+                for(int j=high-1; j>=0; j--) {
+                    Location loc1 = border_1.clone().add(0, -j-k+high-1, 0);
+                    Location loc2 = border_2.clone().add(0, -j-k+high-1, 0);
 
                     int topBlockX = (loc1.getBlockX() < loc2.getBlockX() ? loc2.getBlockX() : loc1.getBlockX());
                     int bottomBlockX = (loc1.getBlockX() > loc2.getBlockX() ? loc2.getBlockX() : loc1.getBlockX());
@@ -144,17 +148,17 @@ public @Getter class Door {
                     for(int x = bottomBlockX; x <= topBlockX; x++) {
                         for(int z = bottomBlockZ; z <= topBlockZ; z++) {
                             Block block = loc1.getWorld().getBlockAt(x, loc1.getBlockY(), z);
-                            loc1.getWorld().getBlockAt(block.getLocation().add(0, -1, 0)).setType(block.getType());
-                            block.setType(Material.AIR);
+                            this.workloadThread.addLoad(new PlaceableBlock(loc1.getWorld().getBlockAt(block.getLocation().add(0, -1, 0)), block.getType()));
+                            this.workloadThread.addLoad(new PlaceableBlock(block, Material.AIR));
                         }
                     }
                 }
                 for(ItemFrame itemFrame: itemFrames)
-                    itemFrame.teleport(itemFrame.getLocation().add(0, -1, 0));
+                    this.workloadThread.addLoad(new ItemFrameTeleportable(itemFrame, itemFrame.getLocation().add(0, -1, 0)));
                 k++;
             }
         }
-        .runTaskTimer(plugin, 20L*closeSeconds, 30L);
+        .runTaskTimerAsynchronously(plugin, 20L*closeSeconds, 30L);
 
     }
 
@@ -194,6 +198,8 @@ public @Getter class Door {
         plugin.getDoors().getConfig().set(prefix+"preventCollision", preventCollision.booleanValue());
 
         plugin.getDoors().getConfig().set(prefix+"closeSeconds", closeSeconds);
+
+        plugin.getDoors().getConfig().set(prefix+"high", high);
 
         plugin.getDoors().getConfig().set(prefix+"border_1", border_1);
         plugin.getDoors().getConfig().set(prefix+"border_2", border_2);
