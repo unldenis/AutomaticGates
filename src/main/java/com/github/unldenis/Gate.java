@@ -5,14 +5,21 @@ import com.github.unldenis.data.DataManager;
 import com.github.unldenis.inventory.*;
 import com.github.unldenis.listener.DoorListener;
 import com.github.unldenis.manager.Doors;
-import com.github.unldenis.obj.CSound;
+import com.github.unldenis.obj.*;
 import com.github.unldenis.task.*;
 import lombok.Getter;
 import org.bukkit.*;
+import org.bukkit.configuration.serialization.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
 @Getter
 public class Gate extends JavaPlugin {
+
+
+    static {
+        ConfigurationSerialization.registerClass(Pin.class, "PinSer");
+    }
+
 
     private DataManager doors;
     private DataManager configYml;

@@ -2,7 +2,7 @@ package com.github.unldenis.command;
 
 import com.github.unldenis.Gate;
 import com.github.unldenis.inventory.*;
-import com.github.unldenis.obj.Door;
+import com.github.unldenis.obj.*;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -145,9 +145,9 @@ public final class MainCommand implements CommandExecutor {
                         player.teleport(midPointLoc);
                          */
                         new BukkitRunnable() {
-
-                            double cos = door.getPin_2().getLocation().getDirection().getZ();
-                            double sen = door.getPin_2().getLocation().getDirection().getX();
+                            Pin tempPin = door.getPinList().get(0);
+                            double cos = tempPin.getLocation().getDirection().getZ();
+                            double sen = tempPin.getLocation().getDirection().getX();
                             double angle = Math.toDegrees(Math.atan2(sen, cos)) - 60;
 
                             double tick = 0.0;
@@ -158,8 +158,8 @@ public final class MainCommand implements CommandExecutor {
                             public void run() {
                                 ++tick;
 
-                                loc = door.getPin_2().getLocation().clone().add(sen, 0, cos);
-                                loc.setDirection(door.getPin_2().getLocation().toVector().subtract(player.getLocation().toVector()));
+                                loc = tempPin.getLocation().clone().add(sen, 0, cos);
+                                loc.setDirection(tempPin.getLocation().toVector().subtract(player.getLocation().toVector()));
                                 player.teleport(loc);
 
                                 angle += tick / 10;

@@ -6,7 +6,7 @@
 
     <groupId>com.github.unldenis</groupId>
     <artifactId>Gate</artifactId>
-    <version>1.5-SNAPSHOT</version>
+    <version>1.5.5-SNAPSHOT</version>
 
     <repositories>
 
@@ -29,6 +29,12 @@
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot</artifactId>
             <version>1.17.1-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>RELEASE</version>
             <scope>provided</scope>
         </dependency>
 

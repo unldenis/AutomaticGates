@@ -2,20 +2,22 @@ package com.github.unldenis.obj;
 
 import com.github.unldenis.Gate;
 import com.github.unldenis.task.*;
+import com.github.unldenis.util.*;
+import com.sun.jna.platform.win32.*;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.ItemFrame;
+import org.bukkit.configuration.file.*;
+import org.bukkit.entity.*;
+import org.bukkit.inventory.*;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.*;
 
 
 /**
@@ -27,15 +29,14 @@ public @Getter class Door {
     private final String name;
     @Setter private Location border_1;
     @Setter private Location border_2;
-    private Pin pin_1 = new Pin();
-    private Pin pin_2 = new Pin();
-    private Pin pin_3 = new Pin();
-    private Pin pin_4 = new Pin();
+    @Setter private List<Pin> pinList = new ArrayList<>();
     @Setter private Integer closeSeconds = 30;
     @Setter private Integer high = 4;
     @Setter private Boolean preventCollision = true;
     @Setter private Boolean enabled = false;
-    private List<ItemFrame> itemFrames = new ArrayList<>();
+    @Setter private Boolean randomPinOrder = false;
+    private final Set<ItemFrame> itemFrames = new HashSet<>();
+    private Vector tempMidpoint;
 
     /**
      * Constructor used in the create command of the Door class
@@ -67,10 +68,26 @@ public @Getter class Door {
        /*
           MOVE ITEM FRAMES TOO
        */
-        Vector midpoint = pin_1.getLocation().toVector().getMidpoint(pin_4.getLocation().toVector());
-        double dis = pin_1.getLocation().distance(pin_4.getLocation());
-        for(Entity entity : pin_1.getLocation().getWorld().getNearbyEntities(midpoint.toLocation(pin_4.getLocation().getWorld())
-                , dis/2, dis/2, dis/2)) {
+        World world = pinList.get(0).getLocation().getWorld();
+        tempMidpoint = pinList.get(0).getLocation().toVector();
+        //calculate midpoint
+        for(int j=1; j< pinList.size(); j++) {
+            tempMidpoint = tempMidpoint.getMidpoint(pinList.get(j).getLocation().toVector());
+        }
+        // get highest radius from midpoint
+        double dis = Double.MIN_VALUE;
+        for(Pin pin: pinList) {
+            double temp = pin.getLocation().toVector().distanceSquared(tempMidpoint);
+            if(temp > dis) {
+                dis = temp;
+            }
+        }
+        // square because we used the distanceSquared
+        dis = Math.sqrt(dis);
+
+        // get all entities
+        for(Entity entity : world.getNearbyEntities(tempMidpoint.toLocation(world)
+                , dis, dis, dis)) {
             if(entity instanceof ItemFrame) {
                 ItemFrame itemFrame = (ItemFrame) entity;
                 itemFrames.add(itemFrame);
@@ -84,7 +101,7 @@ public @Getter class Door {
     public void goUp() {
         new BukkitRunnable() {
             int k = 0;
-            WorkloadThread workloadThread = plugin.getWorkloadThread();
+            final WorkloadThread workloadThread = plugin.getWorkloadThread();
             @Override
             public void run() {
                 if(k==high-1)  {
@@ -97,11 +114,11 @@ public @Getter class Door {
                     Location loc1 = border_1.clone().add(0, -j+k, 0);
                     Location loc2 = border_2.clone().add(0, -j+k, 0);
 
-                    int topBlockX = (loc1.getBlockX() < loc2.getBlockX() ? loc2.getBlockX() : loc1.getBlockX());
-                    int bottomBlockX = (loc1.getBlockX() > loc2.getBlockX() ? loc2.getBlockX() : loc1.getBlockX());
+                    int topBlockX = Math.max(loc1.getBlockX(), loc2.getBlockX());
+                    int bottomBlockX = Math.min(loc1.getBlockX(), loc2.getBlockX());
 
-                    int topBlockZ = (loc1.getBlockZ() < loc2.getBlockZ() ? loc2.getBlockZ() : loc1.getBlockZ());
-                    int bottomBlockZ = (loc1.getBlockZ() > loc2.getBlockZ() ? loc2.getBlockZ() : loc1.getBlockZ());
+                    int topBlockZ = Math.max(loc1.getBlockZ(), loc2.getBlockZ());
+                    int bottomBlockZ = Math.min(loc1.getBlockZ(), loc2.getBlockZ());
 
                     for(int x = bottomBlockX; x <= topBlockX; x++) {
                         for(int z = bottomBlockZ; z <= topBlockZ; z++) {
@@ -111,8 +128,9 @@ public @Getter class Door {
                         }
                     }
                 }
-                for(ItemFrame itemFrame: itemFrames)
+                for(ItemFrame itemFrame: itemFrames) {
                     this.workloadThread.addLoad(new ItemFrameTeleportable(itemFrame, itemFrame.getLocation().add(0, 1, 0)));
+                }
                 k++;
             }
         }
@@ -125,7 +143,7 @@ public @Getter class Door {
     private void goDown() {
         new BukkitRunnable() {
             int k = 0;
-            WorkloadThread workloadThread = plugin.getWorkloadThread();
+            final WorkloadThread workloadThread = plugin.getWorkloadThread();
             @Override
             public void run() {
                 if(k==high-1) {
@@ -134,16 +152,16 @@ public @Getter class Door {
                     return;
                 }
                 if(k==0 && plugin.getCloseGate().isEnabled())
-                    plugin.getCloseGate().playSound(pin_1.getLocation().toVector().getMidpoint(pin_4.getLocation().toVector()).toLocation(pin_1.getLocation().getWorld()));
+                    plugin.getCloseGate().playSound(tempMidpoint.toLocation(pinList.get(0).getLocation().getWorld()));
                 for(int j=high-1; j>=0; j--) {
                     Location loc1 = border_1.clone().add(0, -j-k+high-1, 0);
                     Location loc2 = border_2.clone().add(0, -j-k+high-1, 0);
 
-                    int topBlockX = (loc1.getBlockX() < loc2.getBlockX() ? loc2.getBlockX() : loc1.getBlockX());
-                    int bottomBlockX = (loc1.getBlockX() > loc2.getBlockX() ? loc2.getBlockX() : loc1.getBlockX());
+                    int topBlockX = Math.max(loc1.getBlockX(), loc2.getBlockX());
+                    int bottomBlockX = Math.min(loc1.getBlockX(), loc2.getBlockX());
 
-                    int topBlockZ = (loc1.getBlockZ() < loc2.getBlockZ() ? loc2.getBlockZ() : loc1.getBlockZ());
-                    int bottomBlockZ = (loc1.getBlockZ() > loc2.getBlockZ() ? loc2.getBlockZ() : loc1.getBlockZ());
+                    int topBlockZ = Math.max(loc1.getBlockZ(), loc2.getBlockZ());
+                    int bottomBlockZ = Math.min(loc1.getBlockZ(), loc2.getBlockZ());
 
                     for(int x = bottomBlockX; x <= topBlockX; x++) {
                         for(int z = bottomBlockZ; z <= topBlockZ; z++) {
@@ -177,14 +195,30 @@ public @Getter class Door {
      */
     public boolean isRigth() {
         try {
-            return (pin_1.getPassword().equals(find(pin_1.getLocation()).getItem()) &&
-                    pin_2.getPassword().equals(find(pin_2.getLocation()).getItem()) &&
-                    pin_3.getPassword().equals(find(pin_3.getLocation()).getItem()) &&
-                    pin_4.getPassword().equals(find(pin_4.getLocation()).getItem()));
+            if(randomPinOrder) {
+                ItemStack[] pinsList =
+                        pinList
+                        .stream()
+                        .map(Pin::getPassword)
+                        .toArray(ItemStack[]::new);
+                ItemStack[] currentList=
+                        itemFrames
+                        .stream()
+                        .map(ItemFrame::getItem)
+                        .toArray(ItemStack[]::new);
+                return BukkitUtils.compareArrays(pinsList, currentList);
+            } else {
+                for(Pin pin: pinList) {
+                    if(!pin.getPassword().equals(find(pin.getLocation()).getItem())) {
+                        return false;
+                    }
+                }
+                return true;
+            }
         }catch (NullPointerException e) {
-            System.out.println(e+" -> " + e.getMessage() + " -> " + e.getCause());
+            Bukkit.getLogger().severe(e+" -> " + e.getMessage() + " -> " + e.getCause());
+            return false;
         }
-        return false;
 
     }
 
@@ -193,29 +227,20 @@ public @Getter class Door {
      */
     public void save() {
         String prefix  = "doors." + name + ".";
+        FileConfiguration cfg = plugin.getDoors().getConfig();
+        cfg.set(prefix + "enabled", enabled);
+        cfg.set(prefix + "preventCollision", preventCollision);
+        cfg.set(prefix + "randomPinOrder", randomPinOrder);
 
-        plugin.getDoors().getConfig().set(prefix+"enabled", enabled.booleanValue());
-        plugin.getDoors().getConfig().set(prefix+"preventCollision", preventCollision.booleanValue());
+        cfg.set(prefix+"closeSeconds", closeSeconds);
 
-        plugin.getDoors().getConfig().set(prefix+"closeSeconds", closeSeconds);
+        cfg.set(prefix+"high", high);
 
-        plugin.getDoors().getConfig().set(prefix+"high", high);
+        cfg.set(prefix+"border_1", border_1);
+        cfg.set(prefix+"border_2", border_2);
 
-        plugin.getDoors().getConfig().set(prefix+"border_1", border_1);
-        plugin.getDoors().getConfig().set(prefix+"border_2", border_2);
+        cfg.set(prefix + "pinList", pinList);
 
-
-        plugin.getDoors().getConfig().set(prefix+"pin_1.password", pin_1.getPassword());
-        plugin.getDoors().getConfig().set(prefix+"pin_1.location", pin_1.getLocation());
-
-        plugin.getDoors().getConfig().set(prefix+"pin_2.password", pin_2.getPassword());
-        plugin.getDoors().getConfig().set(prefix+"pin_2.location", pin_2.getLocation());
-
-        plugin.getDoors().getConfig().set(prefix+"pin_3.password", pin_3.getPassword());
-        plugin.getDoors().getConfig().set(prefix+"pin_3.location", pin_3.getLocation());
-
-        plugin.getDoors().getConfig().set(prefix+"pin_4.password", pin_4.getPassword());
-        plugin.getDoors().getConfig().set(prefix+"pin_4.location", pin_4.getLocation());
 
         plugin.getDoors().saveConfig();
 

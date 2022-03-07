@@ -1,17 +1,16 @@
 package com.github.unldenis.manager;
 
 import com.github.unldenis.Gate;
-import com.github.unldenis.obj.Door;
+import com.github.unldenis.obj.*;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Manager class of all gates
@@ -34,23 +33,7 @@ public final class Doors {
                 .findFirst();
     }
 
-    /**
-     * Deprecated method used to search for a gate
-     * @param location location of a gate pin
-     * @return an optional of the Door class if found, otherwise an empty optional
-     */
-    @Deprecated
-    public @NonNull Optional<Door> find(@NonNull Location location) {
-        for(Door door: doors) {
-            if(door.getEnabled() && (door.getPin_1().getLocation().equals(location) ||
-                    door.getPin_2().getLocation().equals(location) ||
-                    door.getPin_3().getLocation().equals(location) ||
-                    door.getPin_4().getLocation().equals(location))) {
-                return Optional.ofNullable(door);
-            }
-        }
-        return Optional.empty();
-    }
+
     /**
      * Method used to search for a gate
      * @param id id of a gate pin
@@ -58,11 +41,12 @@ public final class Doors {
      */
     public @NonNull Optional<Door> find(@NonNull int id) {
         for(Door door: doors) {
-            if(door.getEnabled() && (door.getItemFrames().get(0).getEntityId()==id ||
-                    door.getItemFrames().get(1).getEntityId()==id ||
-                    door.getItemFrames().get(2).getEntityId()==id ||
-                    door.getItemFrames().get(3).getEntityId()==id)) {
-                return Optional.ofNullable(door);
+            if(door.getEnabled()) {
+                for(ItemFrame itemFrame: door.getItemFrames()) {
+                    if(itemFrame.getEntityId() == id) {
+                        return Optional.ofNullable(door);
+                    }
+                }
             }
         }
         return Optional.empty();
@@ -75,11 +59,12 @@ public final class Doors {
      */
     public @NonNull Optional<Door> findMoving(@NonNull int id) {
         for(Door door: doors) {
-            if(!door.getEnabled() && (door.getItemFrames().get(0).getEntityId()==id ||
-                    door.getItemFrames().get(1).getEntityId()==id ||
-                    door.getItemFrames().get(2).getEntityId()==id ||
-                    door.getItemFrames().get(3).getEntityId()==id)) {
-                return Optional.ofNullable(door);
+            if(!door.getEnabled()) {
+                for(ItemFrame itemFrame: door.getItemFrames()) {
+                    if(itemFrame.getEntityId() == id) {
+                        return Optional.ofNullable(door);
+                    }
+                }
             }
         }
         return Optional.empty();
@@ -98,6 +83,7 @@ public final class Doors {
 
                 door.setEnabled(config.getBoolean(prefix+"enabled"));
                 door.setPreventCollision(config.getBoolean(prefix+"preventCollision"));
+                door.setRandomPinOrder(config.getBoolean(prefix + "randomPinOrder"));
 
                 door.setCloseSeconds(config.getInt(prefix+"closeSeconds"));
 
@@ -107,18 +93,7 @@ public final class Doors {
                 door.setBorder_2((Location) config.get(prefix+"border_2"));
 
 
-                door.getPin_1().setLocation((Location) config.get(prefix+"pin_1.location"));
-                door.getPin_1().setPassword((ItemStack) config.get(prefix+"pin_1.password"));
-
-                door.getPin_2().setLocation((Location) config.get(prefix+"pin_2.location"));
-                door.getPin_2().setPassword((ItemStack) config.get(prefix+"pin_2.password"));
-
-                door.getPin_3().setLocation((Location) config.get(prefix+"pin_3.location"));
-                door.getPin_3().setPassword((ItemStack) config.get(prefix+"pin_3.password"));
-
-                door.getPin_4().setLocation((Location) config.get(prefix+"pin_4.location"));
-                door.getPin_4().setPassword((ItemStack) config.get(prefix+"pin_4.password"));
-
+                door.setPinList((List<Pin>) config.getList(prefix+"pinList"));
 
                 if(door.getEnabled())
                     door.loadItemFrames();

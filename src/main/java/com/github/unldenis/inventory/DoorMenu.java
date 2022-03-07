@@ -9,8 +9,10 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.*;
 import org.bukkit.util.*;
+import org.bukkit.util.Vector;
 
 import java.lang.reflect.*;
+import java.util.*;
 
 public class DoorMenu extends Menu {
     private final Door door;
@@ -76,8 +78,9 @@ public class DoorMenu extends Menu {
                     }
                 }
             }else{
-                door.setPreventCollision(!door.getPreventCollision());
-                player.sendMessage(field.getName() + " set to " + ChatColor.GREEN + door.getEnabled());
+                boolean exValue = (boolean) value;
+                ReflectionUtils.setField(field, door, !exValue);
+                player.sendMessage(field.getName() + " set to " + ChatColor.GREEN + !exValue);
             }
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
             this.open(); //Open again this menu
@@ -113,11 +116,12 @@ public class DoorMenu extends Menu {
                 if (rts.getHitEntity() != null) {
                     ItemFrame itemFrame = (ItemFrame) rts.getHitEntity();
 
-                    Pin pin = (Pin) value;
+                    Pin pin = new Pin();
                     pin.setLocation(itemFrame.getLocation());
                     pin.setPassword(itemFrame.getItem());
+                    door.getPinList().add(pin);
 
-                    player.sendMessage(field.getName() + " set to " + ChatColor.GREEN + itemFrame.getLocation().toVector());
+                    player.sendMessage("Added pin to " + ChatColor.GREEN + itemFrame.getLocation().toVector());
                     player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
                 }
             }
@@ -172,7 +176,7 @@ public class DoorMenu extends Menu {
                 itemStack.setItemMeta(meta);
                 return itemStack;
             }
-            else if(field.getType().equals(Pin.class)) {
+            else if(field.getType().equals(List.class)) {
                 ItemStack itemStack = new ItemStack(Material.ITEM_FRAME);
                 ItemMeta meta = itemStack.getItemMeta();
                 meta.setDisplayName("§f§n" + field.getName());
