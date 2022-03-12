@@ -3,14 +3,20 @@ package com.github.unldenis;
 import com.github.unldenis.command.MainCommand;
 import com.github.unldenis.data.DataManager;
 import com.github.unldenis.inventory.*;
-import com.github.unldenis.listener.DoorListener;
+import com.github.unldenis.listener.*;
 import com.github.unldenis.manager.Doors;
 import com.github.unldenis.obj.*;
+import com.github.unldenis.packetmanipulator.*;
 import com.github.unldenis.task.*;
-import lombok.Getter;
+import com.sk89q.worldguard.bukkit.*;
+import lombok.*;
 import org.bukkit.*;
 import org.bukkit.configuration.serialization.*;
+import org.bukkit.entity.*;
+import org.bukkit.plugin.*;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.*;
+
 
 @Getter
 public class Gate extends JavaPlugin {
@@ -29,6 +35,8 @@ public class Gate extends JavaPlugin {
     private CSound closeGate;
 
     private WorkloadThread workloadThread;
+
+    private WorldGuardPlugin worldGuardPlugin;
 
     @Override
     public void onEnable() {
@@ -55,6 +63,34 @@ public class Gate extends JavaPlugin {
         workloadThread = new WorkloadThread(configYml.getConfig().getInt("MaxMillisPerTick"));
         Bukkit.getScheduler().runTaskTimer(this, workloadThread, 1L, 1L);
 
+        //WorldGuard
+        Plugin wgPlugin = getServer().getPluginManager().getPlugin("WorldGuard");
+        if (wgPlugin instanceof WorldGuardPlugin) {
+            worldGuardPlugin = (WorldGuardPlugin) wgPlugin;
+            getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+        }
+
+        if(hasWorldGuard()) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                new PacketListenerImpl(player, this);
+            }
+        }
     }
 
+    @Override
+    public void onDisable() {
+        if(hasWorldGuard()) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                PacketListener.eject(player);
+            }
+        }
+    }
+
+    public @Nullable WorldGuardPlugin getWorldGuardPlugin() {
+        return worldGuardPlugin;
+    }
+
+    public boolean hasWorldGuard() {
+        return worldGuardPlugin != null;
+    }
 }

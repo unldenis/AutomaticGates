@@ -6,7 +6,7 @@
 
     <groupId>com.github.unldenis</groupId>
     <artifactId>Gate</artifactId>
-    <version>1.5.5-SNAPSHOT</version>
+    <version>1.5.6-SNAPSHOT</version>
 
     <repositories>
 
@@ -35,6 +35,12 @@
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
             <version>RELEASE</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sk89q.worldguard</groupId>
+            <artifactId>worldguard-bukkit</artifactId>
+            <version>7.0.2-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
 
